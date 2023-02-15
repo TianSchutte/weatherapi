@@ -68,7 +68,11 @@ class WeatherController
             ->first();
 
         if ($existingCity) {
-            $this->updateWeatherStats($existingCity, $apiResponse);
+            $existingWeather = $existingCity->weatherStats()->latest()->first();
+            $existingWeather->update([
+                'weather_data' => [$apiResponse],
+            ]);
+            return redirect()->back();
         }
 
         // If no existing UserCity record was found, create a new one
@@ -129,25 +133,6 @@ class WeatherController
         $url = "http://api.weatherapi.com/v1/forecast.json?key={$this->apiKey}&q={$location}&days={$days}&aqi=no";
         return Http::get($url)->json();
     }
-
-    /**
-     * @param $existingCity
-     * @param $data
-     * @return JsonResponse|mixed
-     */
-    private function updateWeatherStats($existingCity, $data)
-    {
-        // Update the existing WeatherStat record with the new weather data
-        $existingWeather = $existingCity->weatherStats()->latest()->first();
-        $existingWeather->update([
-            'weather_data' => [$data],
-        ]);
-        return redirect()->back();
-//        return response()->json([
-//            'User City' => $existingCity,
-//            'City Weather' => $existingWeather,
-//        ]);
-    }
-
+    
 }
 
