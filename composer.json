@@ -1,0 +1,17 @@
+{
+    "name": "tian/weatherapi",
+    "description": "an Weather Api",
+    "autoload": {
+        "psr-4": {
+            "Tian\\Weatherapi\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Tian Schutte"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.0.1"
+    }
+}
