@@ -35,11 +35,10 @@ class WeatherController
                     'city_name' => $userCity->city_name,
                     'weather_data' => $weatherStat->weather_data,
                     'city_id' => $weatherStat->city_id,
-                    'user_id'=>$id
                 ];
             }
         }
-        return view('weatherapi::index', ['data'=>$data]);
+        return view('weatherapi::index', ['data'=>$data,'user_id'=>$id]);
 
 //        return response()->json($data);
     }
@@ -134,7 +133,7 @@ class WeatherController
     /**
      * @param $existingCity
      * @param $data
-     * @return JsonResponse
+     * @return JsonResponse|mixed
      */
     private function updateWeatherStats($existingCity, $data)
     {
@@ -143,11 +142,11 @@ class WeatherController
         $existingWeather->update([
             'weather_data' => [$data],
         ]);
-
-        return response()->json([
-            'User City' => $existingCity,
-            'City Weather' => $existingWeather,
-        ]);
+        return redirect()->back();
+//        return response()->json([
+//            'User City' => $existingCity,
+//            'City Weather' => $existingWeather,
+//        ]);
     }
 
 }
