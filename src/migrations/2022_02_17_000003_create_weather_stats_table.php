@@ -11,9 +11,6 @@ class CreateWeatherStatsTable extends Migration
         Schema::create('weather_stats', function (Blueprint $table) {
             $table->id();
 
-//            $table->unsignedBigInteger('user_id');
-//            $table->foreign('user_id')->references('id')->on('users');
-
             $table->unsignedBigInteger('city_id')->nullable();
             $table->foreign('city_id')->references('id')->on('user_cities');
 

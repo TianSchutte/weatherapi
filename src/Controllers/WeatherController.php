@@ -2,32 +2,50 @@
 
 namespace tian\weatherapi\Controllers;
 
-use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use Exception;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use tian\weatherapi\Api\WeatherApi;
 use tian\weatherapi\Models\UserCity;
 use tian\weatherapi\Models\WeatherStat;
 
-class WeatherController
+class WeatherController extends Controller
 {
     /**
-     * @var string
+     * @var WeatherApi
      */
-    protected $apiKey;
+    protected $weatherApi;
 
-    public function __construct()
+    /**
+     * @param WeatherApi $weatherApi
+     */
+    public function __construct(WeatherApi $weatherApi)
     {
-        $this->apiKey = env('WEATHER_API_KEY', '5664a4f8e4114b2889b95701231402');
+        $this->weatherApi = $weatherApi;
+//        $this->middleware('auth');
     }
 
     /**
-     * @param $id
-     * @return JsonResponse | mixed
+     * @return View
      */
-    public function show($id)
+    public function show()
     {
+        $user_id = auth()->id();
         $data = [];
-        $userCities = UserCity::with('weatherStats')->where('user_id', $id)->get();
+
+        try {
+            $userCities = UserCity::with('weatherStats')
+                ->where('user_id', $user_id)
+                ->get();
+
+        } catch (\Exception $e) {
+            return view('weatherapi::index', [
+                'data' => $data,
+                'user' => auth()->user()
+            ])->with('message', 'No cities found');
+        }
 
         foreach ($userCities as $userCity) {
             foreach ($userCity->weatherStats as $weatherStat) {
@@ -38,22 +56,30 @@ class WeatherController
                 ];
             }
         }
-        return view('weatherapi::index', ['data'=>$data,'user_id'=>$id]);
 
-//        return response()->json($data);
+        return view('weatherapi::index', [
+            'data' => $data,
+            'user' => auth()->user()
+        ]);
     }
 
     /**
      * @param Request $request
-     * @param $id
-     * @return JsonResponse|mixed
+     * @return View
      */
-    public function store(Request $request, $id)
+    public function store(Request $request)
     {
-        $apiResponse = $this->getApiResponse($request);
+        $user_id = auth()->id();
+
+        $validatedData = $request->validate([
+            'location' => 'required|string',
+            'days' => 'nullable|integer|min:0|max:7',
+        ]);
+
+        $apiResponse = $this->weatherApi->getApiResponse($request);
 
         if (isset($apiResponse['error'])) {
-            return $apiResponse;
+            return $this->show()->with('message', $apiResponse['error']['message']);
         }
 
         $city_name = implode(', ', [
@@ -62,77 +88,58 @@ class WeatherController
             $apiResponse['location']['country']
         ]);
 
-        // replace last same city insert in weather table with new data
-        $existingCity = UserCity::where('user_id', $id)
-            ->where('city_name', $city_name)
-            ->first();
+        //DB:transaction for in order to rollback if either fails
+        DB::transaction(function () use ($user_id, $city_name, $apiResponse) {
 
-        if ($existingCity) {
-            $existingWeather = $existingCity->weatherStats()->latest()->first();
-            $existingWeather->update([
-                'weather_data' => [$apiResponse],
-            ]);
-            return redirect()->back();
-        }
+            // replace last same city insert in weather table with new data
+            $existingCity = UserCity::where('user_id', $user_id)
+                ->where('city_name', $city_name)
+                ->first();
 
-        // If no existing UserCity record was found, create a new one
-        $cityData = UserCity::create([
-            'city_name' => $city_name,
-            'user_id' => $id,
-        ]);
+            if ($existingCity) {
+                $existingWeather = $existingCity->weatherStats()->latest()->first();
+                $existingWeather->update([
+                    'weather_data' => [$apiResponse],
+                ]);
 
-        $weatherData = WeatherStat::create([
-            'city_id' => $cityData->id,
-            'weather_data' => [$apiResponse],
-        ]);
+            } else {
+                // If no existing UserCity record was found, create a new one
+                $cityData = UserCity::create([
+                    'city_name' => $city_name,
+                    'user_id' => $user_id,
+                ]);
 
-//        return response()->json([
-//            'User City' => $cityData,
-//            'City Weather' => $weatherData
-//        ]);
-        return redirect()->back();
+                WeatherStat::create([
+                    'city_id' => $cityData->id,
+                    'weather_data' => [$apiResponse],
+                ]);
+            }
+        });
 
+        return $this->show()->with('message', 'City added successfully');
     }
 
     /**
-     * @param $id
      * @param $city_id
-     * @return JsonResponse|mixed
+     * @return View
      */
-    public function destroy($id, $city_id)
+    public function destroy($city_id)
     {
-        $weatherDeleted = WeatherStat::where('city_id', $city_id)->delete();
-        $userCityDeleted = UserCity::where('id', $city_id)->where('user_id', $id)->delete();
+        $user_id = auth()->id();
 
-//        if ($weatherDeleted && $userCityDeleted) {
-//            return response()->json([
-//                'status' => 'Data removal successful'
-//            ]);
-//        } else {
-//            return response()->json([
-//                'status' => 'Data removal failure'
-//            ]);
-//        }
-        return redirect()->back();
+        try {
+            $weatherDeleted = WeatherStat::where('city_id', $city_id)->delete();
+            $userCityDeleted = UserCity::where('id', $city_id)->where('user_id', $user_id)->delete();
+
+            if ($weatherDeleted == 0 || $userCityDeleted == 0) {
+                return $this->show()->with('message', 'Failed to delete city');
+            }
+            return $this->show()->with('message', 'Deleted city successfully');
+
+        } catch (Exception $e) {
+            return $this->show()->with('message', 'Failed to delete city due to: ' . $e->getMessage());
+
+        }
     }
-
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    private function getApiResponse(Request $request)
-    {
-        $validatedData = $request->validate([
-            'location' => 'required|string',
-            'days' => 'nullable|integer|min:0|max:7',
-        ]);
-
-        $location = $validatedData['location'];
-        $days = $validatedData['days'] ?? 1;
-
-        $url = "http://api.weatherapi.com/v1/forecast.json?key={$this->apiKey}&q={$location}&days={$days}&aqi=no";
-        return Http::get($url)->json();
-    }
-    
 }
 

@@ -3,7 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use tian\weatherapi\Controllers\WeatherController;
 
-//changed from 'right' route method to get for views
-Route::get('/weatherapi/get/{user:id}', [WeatherController::class, 'show']);
-Route::match(['put', 'post'], '/weatherapi/set/{user:id}', [WeatherController::class, 'store']);
-Route::delete('/weatherapi/delete/{user:id}/{UserCity:id}', [WeatherController::class, 'destroy']);
+
+Route::group(['middleware' => ['web', 'auth']], function () {
+    Route::get('/weatherapi/', [WeatherController::class, 'show'])
+        ->name('weather.get');
+
+    Route::match(['put', 'post'], '/weatherapi/', [WeatherController::class, 'store'])
+        ->name('weather.set');
+
+    Route::delete('/weatherapi/{UserCity:id}', [WeatherController::class, 'destroy'])
+        ->name('weather.delete');
+});
