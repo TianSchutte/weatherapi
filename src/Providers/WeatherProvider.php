@@ -17,7 +17,7 @@ class WeatherProvider extends ServiceProvider
     {
         // load necessary folders
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
-        $this->loadMigrationsFrom(__DIR__ . '/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'weatherapi');
         $this->loadViewsFrom(__DIR__ . '/../resources/views/components', 'weatherapi');
 
