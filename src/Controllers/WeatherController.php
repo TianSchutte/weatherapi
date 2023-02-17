@@ -32,7 +32,12 @@ class WeatherController extends Controller
      */
     public function show()
     {
-        $user_id = auth()->id();
+        try {
+            $user_id = auth()->id();
+        } catch (Exception $e) {
+            return \view('/')->with('message', 'Failed to delete city due to: ' . $e->getMessage());
+        }
+
         $data = [];
 
         try {
@@ -69,7 +74,11 @@ class WeatherController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id = auth()->id();
+        try {
+            $user_id = auth()->id();
+        } catch (Exception $e) {
+            return \view('/')->with('message', 'Failed to delete city due to: ' . $e->getMessage());
+        }
 
         $validatedData = $request->validate([
             'location' => 'required|string',
@@ -125,7 +134,11 @@ class WeatherController extends Controller
      */
     public function destroy($city_id)
     {
-        $user_id = auth()->id();
+        try {
+            $user_id = auth()->id();
+        } catch (Exception $e) {
+            return \view('/')->with('message', 'Failed to delete city due to: ' . $e->getMessage());
+        }
 
         try {
             $weatherDeleted = WeatherStat::where('city_id', $city_id)->delete();
