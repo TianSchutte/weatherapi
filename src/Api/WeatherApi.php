@@ -1,6 +1,6 @@
 <?php
 
-namespace tian\weatherapi\Api;
+namespace Tian\Weatherapi\Api;
 
 
 use Illuminate\Http\JsonResponse;

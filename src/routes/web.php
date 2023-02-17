@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use tian\weatherapi\Controllers\WeatherController;
+use Tian\Weatherapi\Controllers\WeatherController;
 
 
 Route::group(['middleware' => ['web', 'auth']], function () {

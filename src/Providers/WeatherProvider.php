@@ -1,6 +1,6 @@
 <?php
 
-namespace tian\weatherapi\Providers;
+namespace Tian\Weatherapi\Providers;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Blade;

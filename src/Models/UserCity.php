@@ -1,6 +1,6 @@
 <?php
 
-namespace tian\weatherapi\Models;
+namespace Tian\Weatherapi\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

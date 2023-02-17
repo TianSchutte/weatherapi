@@ -1,15 +1,15 @@
 <?php
 
-namespace tian\weatherapi\Controllers;
+namespace Tian\Weatherapi\Controllers;
 
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use tian\weatherapi\Api\WeatherApi;
-use tian\weatherapi\Models\UserCity;
-use tian\weatherapi\Models\WeatherStat;
+use Tian\Weatherapi\Api\WeatherApi;
+use Tian\Weatherapi\Models\UserCity;
+use Tian\Weatherapi\Models\WeatherStat;
 
 class WeatherController extends Controller
 {
